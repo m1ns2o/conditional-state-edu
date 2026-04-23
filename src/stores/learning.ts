@@ -18,7 +18,6 @@ function createMissionProgressMap(): MissionProgressMap {
         correct: 0,
         total: 0,
         completed: false,
-        currentCardIndex: 0,
       },
     ]),
   );
@@ -49,12 +48,7 @@ export const useLearningStore = defineStore('learning', () => {
     conveyorMissions.findIndex((mission) => mission.id === selectedMissionId.value),
   );
 
-  const currentCard = computed(
-    () =>
-      selectedMission.value.queue[
-        selectedMissionProgress.value.currentCardIndex
-      ] ?? null,
-  );
+  const currentCard = computed(() => selectedMission.value?.card ?? null);
 
   const missionAccuracy = computed(() =>
     Object.fromEntries(
@@ -93,24 +87,11 @@ export const useLearningStore = defineStore('learning', () => {
     () => selectedMissionIndex.value === conveyorMissions.length - 1,
   );
 
-  const isCurrentMissionLastCard = computed(
-    () =>
-      selectedMissionProgress.value.currentCardIndex >=
-      selectedMission.value.queue.length - 1,
-  );
-
   const canStartRun = computed(
     () =>
       Boolean(currentCard.value) &&
       Boolean(currentPrediction.value) &&
       runState.value === 'idle',
-  );
-
-  const canAdvanceCard = computed(
-    () =>
-      runState.value === 'resolved' &&
-      selectedMissionProgress.value.currentCardIndex <
-        selectedMission.value.queue.length - 1,
   );
 
   function selectMission(missionId: string) {
@@ -169,8 +150,7 @@ export const useLearningStore = defineStore('learning', () => {
         ...progress,
         total: progress.total + 1,
         correct: progress.correct + (isCorrect ? 1 : 0),
-        completed:
-          progress.currentCardIndex >= selectedMission.value.queue.length - 1,
+        completed: true,
       },
     };
 
@@ -185,29 +165,6 @@ export const useLearningStore = defineStore('learning', () => {
     runState.value = 'resolved';
   }
 
-  function advanceCard() {
-    if (!currentRunResult.value || runState.value !== 'resolved') {
-      return;
-    }
-
-    const progress = missionProgress.value[selectedMissionId.value];
-
-    missionProgress.value = {
-      ...missionProgress.value,
-      [selectedMissionId.value]: {
-        ...progress,
-        currentCardIndex: Math.min(
-          progress.currentCardIndex + 1,
-          selectedMission.value.queue.length - 1,
-        ),
-      },
-    };
-
-    currentPrediction.value = null;
-    currentRunResult.value = null;
-    runState.value = 'idle';
-  }
-
   function resetMission(missionId = selectedMissionId.value) {
     missionProgress.value = {
       ...missionProgress.value,
@@ -215,7 +172,6 @@ export const useLearningStore = defineStore('learning', () => {
         correct: 0,
         total: 0,
         completed: false,
-        currentCardIndex: 0,
       },
     };
 
@@ -241,12 +197,10 @@ export const useLearningStore = defineStore('learning', () => {
 
   return {
     advanceToNextMission,
-    canAdvanceCard,
     canStartRun,
     currentCard,
     currentPrediction,
     currentRunResult,
-    isCurrentMissionLastCard,
     isFinalMission,
     lastResolvedResult,
     missionAccuracy,
@@ -268,6 +222,5 @@ export const useLearningStore = defineStore('learning', () => {
     startRun,
     streak,
     totalCompletedMissions,
-    advanceCard,
   };
 });

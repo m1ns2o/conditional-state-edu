@@ -6,7 +6,7 @@ import PlayingCard from './PlayingCard.vue';
 const props = withDefaults(
   defineProps<{
     mission: ConveyorMission;
-    currentCard: ConveyorMission['queue'][number] | null;
+    currentCard: ConveyorMission['card'] | null;
     currentPrediction?: string | null;
     runResult: ConveyorRunResult | null;
     runState: ConveyorRunState;
@@ -31,7 +31,7 @@ const phase = ref<'idle' | 'approach' | 'gates' | 'diverted'>('idle');
 const timers: number[] = [];
 
 const displayCard = computed(
-  () => props.runResult?.card ?? props.currentCard ?? props.mission.queue[0] ?? null,
+  () => props.runResult?.card ?? props.currentCard ?? props.mission.card ?? null,
 );
 
 const layoutMetrics = computed(() => {

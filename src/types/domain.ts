@@ -109,7 +109,7 @@ export interface ConveyorMission {
   goal: string;
   gates: GateRule[];
   lanes: OutputLane[];
-  queue: MissionCard[];
+  card: MissionCard;
   speedProfile: SpeedProfile;
 }
 
@@ -136,5 +136,4 @@ export interface MissionProgress {
   correct: number;
   total: number;
   completed: boolean;
-  currentCardIndex: number;
 }

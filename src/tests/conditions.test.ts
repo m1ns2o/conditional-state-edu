@@ -4,16 +4,33 @@ import type { ConditionNode } from '../types/domain';
 import { createCard } from '../utils/cards';
 import { evaluateCondition, evaluateConveyorPath } from '../utils/conditions';
 
+function getMission(id: string) {
+  const mission = conveyorMissions.find((candidate) => candidate.id === id);
+
+  expect(mission).toBeDefined();
+  return mission!;
+}
+
 describe('condition evaluation', () => {
-  it('stops at the first matching gate in conveyor order', () => {
-    const mission = conveyorMissions[2];
-    const card = mission.queue[1];
+  it('continues to the next gate until it finds a matching branch', () => {
+    const mission = getMission('line-4');
+    const card = mission.card;
     const result = evaluateConveyorPath(mission, card);
 
-    expect(result.finalLaneTag).toBe('black-lane');
+    expect(result.finalLaneTag).toBe('spade-lane');
     expect(result.visitedGates).toHaveLength(2);
     expect(result.visitedGates[0]?.matched).toBe(false);
     expect(result.visitedGates[1]?.matched).toBe(true);
+  });
+
+  it('keeps execution on the first if branch even if a later elif would also match', () => {
+    const mission = getMission('line-5');
+    const card = mission.card;
+    const result = evaluateConveyorPath(mission, card);
+
+    expect(result.finalLaneTag).toBe('priority-lane');
+    expect(result.visitedGates).toHaveLength(1);
+    expect(result.visitedGates[0]?.matched).toBe(true);
   });
 
   it('handles and / or / not with comparison operators', () => {
@@ -62,12 +79,25 @@ describe('condition evaluation', () => {
     expect(failed.passed).toBe(false);
   });
 
-  it('routes low numbers or spades into the if branch of the OR mission', () => {
-    const mission = conveyorMissions[3];
-    const lowNumber = evaluateConveyorPath(mission, createCard('club', '3'));
-    const spade = evaluateConveyorPath(mission, createCard('spade', '7'));
+  it('routes each question by its own rule and card pair', () => {
+    const andMission = getMission('line-1');
+    const orMission = getMission('line-2');
+    const easyOrMission = getMission('line-2a');
+    const easyAndMission = getMission('line-2b');
+    const notMission = getMission('line-3');
+    const andCard = evaluateConveyorPath(andMission, andMission.card);
+    const orCard = evaluateConveyorPath(orMission, orMission.card);
+    const easyOrCard = evaluateConveyorPath(easyOrMission, easyOrMission.card);
+    const easyAndCard = evaluateConveyorPath(easyAndMission, easyAndMission.card);
+    const notCard = evaluateConveyorPath(notMission, notMission.card);
+    const mixedMission = getMission('line-6');
+    const mixedCard = evaluateConveyorPath(mixedMission, mixedMission.card);
 
-    expect(lowNumber.finalLaneTag).toBe('vip');
-    expect(spade.finalLaneTag).toBe('vip');
+    expect(andCard.finalLaneTag).toBe('power');
+    expect(orCard.finalLaneTag).toBe('red-suit');
+    expect(easyOrCard.finalLaneTag).toBe('easy-or');
+    expect(easyAndCard.finalLaneTag).toBe('easy-and');
+    expect(notCard.finalLaneTag).toBe('not-black');
+    expect(mixedCard.finalLaneTag).toBe('special');
   });
 });

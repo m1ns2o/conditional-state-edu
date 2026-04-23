@@ -99,22 +99,38 @@ const pipDensityClass = computed(() => {
   gap: 0.35rem;
   overflow: hidden;
   border-radius: 1.2rem;
+  font-family:
+    "Baskerville",
+    "Times New Roman",
+    "Apple SD Gothic Neo",
+    serif;
+  font-variant-numeric: lining-nums;
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.98) 52%),
-    linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid rgba(203, 213, 225, 0.92);
+    linear-gradient(180deg, #fffefb 0%, #ffffff 48%, #fbfdff 100%);
+  border: 2px solid rgba(15, 23, 42, 0.16);
   box-shadow:
-    0 18px 36px rgba(15, 23, 42, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    0 20px 42px rgba(15, 23, 42, 0.16),
+    0 2px 0 rgba(15, 23, 42, 0.08);
 }
 
 .playing-card::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: 10px;
+  border-radius: 0.8rem;
+  border: 1.5px solid rgba(15, 23, 42, 0.14);
   background:
-    linear-gradient(135deg, rgba(148, 163, 184, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 42%);
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.16) 44%, transparent 68%);
+}
+
+.playing-card::after {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border-radius: 0.7rem;
+  background:
+    radial-gradient(circle at center, rgba(15, 23, 42, 0.03), transparent 58%);
+  pointer-events: none;
 }
 
 .playing-card--compact {
@@ -126,7 +142,7 @@ const pipDensityClass = computed(() => {
 .playing-card__corner,
 .playing-card__center {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .playing-card__corner {
@@ -136,20 +152,21 @@ const pipDensityClass = computed(() => {
 }
 
 .playing-card__corner strong {
-  font-size: 1.6rem;
+  font-size: 1.68rem;
   line-height: 1;
 }
 
 .playing-card__corner span {
-  font-size: 1.1rem;
+  font-size: 1.18rem;
+  line-height: 1;
 }
 
 .playing-card--compact .playing-card__corner strong {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
 }
 
 .playing-card--compact .playing-card__corner span {
-  font-size: 0.96rem;
+  font-size: 1rem;
 }
 
 .playing-card__corner--bottom {
@@ -162,22 +179,23 @@ const pipDensityClass = computed(() => {
   display: flex;
   align-items: stretch;
   justify-content: center;
+  padding: 0.2rem 0;
 }
 
 .playing-card__pips {
-  width: min(100%, 5rem);
+  width: min(100%, 4.8rem);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 0.15rem 0;
+  padding: 0.2rem 0;
 }
 
 .playing-card__pips--wide {
-  width: min(100%, 5.35rem);
+  width: min(100%, 5.1rem);
 }
 
 .playing-card__pips--dense {
-  width: min(100%, 5.6rem);
+  width: min(100%, 5.28rem);
 }
 
 .playing-card__pip-row {
@@ -194,31 +212,32 @@ const pipDensityClass = computed(() => {
 }
 
 .playing-card__pip {
-  font-size: 1.95rem;
+  font-size: 2rem;
   line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .playing-card--compact .playing-card__pips {
-  width: min(100%, 3.95rem);
+  width: min(100%, 3.8rem);
 }
 
 .playing-card--compact .playing-card__pips--wide {
-  width: min(100%, 4.2rem);
+  width: min(100%, 4rem);
 }
 
 .playing-card--compact .playing-card__pips--dense {
-  width: min(100%, 4.45rem);
+  width: min(100%, 4.16rem);
 }
 
 .playing-card--compact .playing-card__pip {
-  font-size: 1.52rem;
+  font-size: 1.46rem;
 }
 
 .playing-card--red {
-  color: #d44b47;
+  color: #c81e1e;
 }
 
 .playing-card--black {
-  color: #111927;
+  color: #111827;
 }
 </style>

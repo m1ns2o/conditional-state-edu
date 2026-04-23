@@ -5,26 +5,19 @@ import PlayingCard from './PlayingCard.vue';
 
 const props = defineProps<{
   mission: ConveyorMission;
-  currentCard: ConveyorMission['queue'][number] | null;
+  currentCard: ConveyorMission['card'] | null;
   currentPrediction: string | null;
   runState: ConveyorRunState;
   canStartRun: boolean;
-  canAdvanceCard: boolean;
-  currentCardIndex: number;
   locked?: boolean;
-  isFinalCard?: boolean;
+  isFinalStep?: boolean;
 }>();
 
 defineEmits<{
   (event: 'select-prediction', laneTag: string): void;
   (event: 'start-run'): void;
-  (event: 'advance-card'): void;
   (event: 'reset-mission'): void;
 }>();
-
-const isLastCard = computed(
-  () => props.currentCardIndex >= props.mission.queue.length - 1,
-);
 
 const selectedLane = computed(
   () => props.mission.lanes.find((lane) => lane.tag === props.currentPrediction) ?? null,
@@ -48,10 +41,6 @@ const consoleLabel = computed(() => {
 
   if (props.runState === 'running') {
     return '벨트 작동 중';
-  }
-
-  if (props.canAdvanceCard) {
-    return '결과 확정';
   }
 
   return '예측 입력 대기';
@@ -82,7 +71,7 @@ function laneToneClass(accent: ConveyorMission['lanes'][number]['accent']) {
         <div class="prediction-tray__card-meta">
           <span>현재 공급 카드</span>
           <strong>{{ currentCard?.displayName ?? '다음 카드를 불러오는 중' }}</strong>
-          <small>카드 {{ currentCardIndex + 1 }} / {{ mission.queue.length }}</small>
+          <small>현재 문제 카드</small>
         </div>
       </div>
 
@@ -133,15 +122,6 @@ function laneToneClass(accent: ConveyorMission['lanes'][number]['accent']) {
 
       <button
         class="secondary-button"
-        data-testid="advance-card"
-        :disabled="!canAdvanceCard || locked"
-        @click="$emit('advance-card')"
-      >
-        {{ isLastCard ? '라인 종료 대기' : '다음 카드 공급' }}
-      </button>
-
-      <button
-        class="secondary-button"
         :disabled="locked"
         @click="$emit('reset-mission')"
       >
@@ -153,8 +133,8 @@ function laneToneClass(accent: ConveyorMission['lanes'][number]['accent']) {
       {{
         locked
           ? '스테이지 전환이 끝나면 다음 컨베이어 라인이 열립니다.'
-          : isFinalCard
-            ? '이번 카드가 마지막입니다. 결과가 확정되면 다음 라인으로 이동합니다.'
+          : isFinalStep
+            ? '이번 문제가 마지막입니다. 결과가 확정되면 세션이 끝납니다.'
             : '규칙 패널을 먼저 읽고, 실제 카드가 빠져나갈 레인을 예측해 보세요.'
       }}
     </p>

@@ -11,42 +11,28 @@ const {
   currentCard,
   currentPrediction,
   currentRunResult,
-  isCurrentMissionLastCard,
-  isFinalMission,
   lastResolvedResult,
   runNonce,
   runState,
   score,
   selectedMission,
-  selectedMissionIndex,
-  selectedMissionProgress,
   streak,
+  totalCompletedMissions,
 } = storeToRefs(store);
 
 const handoffState = ref<'idle' | 'pending'>('idle');
 const started = ref(false);
 let handoffTimer: number | undefined;
 
-const queueProgressLabel = computed(() => {
-  const currentIndex = selectedMissionProgress.value.currentCardIndex + 1;
-  return `${Math.min(currentIndex, selectedMission.value.queue.length)} / ${selectedMission.value.queue.length}`;
-});
-
 const boardComplete = computed(
   () =>
-    isFinalMission.value &&
-    isCurrentMissionLastCard.value &&
+    totalCompletedMissions.value >= conveyorMissions.length &&
     runState.value === 'resolved',
 );
 
 const interactionLocked = computed(
   () => handoffState.value !== 'idle' || runState.value !== 'idle',
 );
-
-const laneRangeLabel = computed(() => {
-  const laneCounts = conveyorMissions.map((mission) => mission.lanes.length);
-  return `${Math.min(...laneCounts)}-${Math.max(...laneCounts)} belts`;
-});
 
 const outcomeTone = computed(() => {
   if (!lastResolvedResult.value) {
@@ -65,10 +51,12 @@ const feedbackLabel = computed(() => {
     return '';
   }
 
-  return feedbackResult.value.isPredictionCorrect ? '맞았어요' : '틀렸어요';
+  return feedbackResult.value.isPredictionCorrect
+    ? '참 잘했어요'
+    : '한 번 더 살펴볼까요';
 });
 
-const totalLinesLabel = computed(() => `${conveyorMissions.length} lines`);
+const totalLinesLabel = computed(() => `${conveyorMissions.length}개 작업 문제`);
 
 function clearHandoffTimer() {
   if (handoffTimer !== undefined) {
@@ -116,17 +104,9 @@ function handleManualStart() {
 }
 
 function handleAnimationFinished() {
-  const finishedCurrentMission = isCurrentMissionLastCard.value;
-  const finishedAllMissions = isFinalMission.value;
-
   store.resolveRun();
-
-  if (!finishedCurrentMission) {
-    scheduleHandoff(() => {
-      store.advanceCard();
-    }, 700);
-    return;
-  }
+  const finishedAllMissions =
+    totalCompletedMissions.value >= conveyorMissions.length;
 
   if (!finishedAllMissions) {
     scheduleHandoff(() => {
@@ -153,34 +133,9 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="play-surface">
-    <header v-if="started" class="play-surface__bar">
-      <div class="play-surface__metrics">
-        <div class="play-surface__metric">
-          <span>Score</span>
-          <strong>{{ score }}</strong>
-        </div>
-        <div class="play-surface__metric">
-          <span>Line</span>
-          <strong>{{ selectedMissionIndex + 1 }}</strong>
-        </div>
-        <div class="play-surface__metric">
-          <span>Card</span>
-          <strong>{{ queueProgressLabel }}</strong>
-        </div>
-        <div class="play-surface__metric">
-          <span>Streak</span>
-          <strong>{{ streak }}</strong>
-        </div>
-      </div>
-
-      <button
-        class="play-surface__reset"
-        type="button"
-        aria-label="세션 리셋"
-        @click="handleResetSession"
-      >
-        Reset
-      </button>
+    <header v-if="started" class="play-surface__scoreboard" aria-label="현재 점수">
+      <span>점수</span>
+      <strong>{{ score }}</strong>
     </header>
 
     <section v-if="!started" class="play-surface__overlay play-surface__overlay--start">
@@ -189,16 +144,61 @@ onBeforeUnmount(() => {
         <span class="play-surface__poster-track play-surface__poster-track--branch-top" />
         <span class="play-surface__poster-track play-surface__poster-track--branch-bottom" />
         <span class="play-surface__poster-track play-surface__poster-track--branch-top-alt" />
+        <span
+          class="play-surface__poster-card play-surface__poster-card--one play-surface__poster-card--red"
+        >
+          <span class="play-surface__poster-corner">
+            <strong>7</strong>
+            <span>♥</span>
+          </span>
+          <span class="play-surface__poster-pips">
+            <span>♥ ♥</span>
+            <span>♥</span>
+            <span>♥ ♥</span>
+            <span>♥ ♥</span>
+          </span>
+          <span class="play-surface__poster-corner play-surface__poster-corner--bottom">
+            <strong>7</strong>
+            <span>♥</span>
+          </span>
+        </span>
+        <span
+          class="play-surface__poster-card play-surface__poster-card--two play-surface__poster-card--black"
+        >
+          <span class="play-surface__poster-corner">
+            <strong>4</strong>
+            <span>♠</span>
+          </span>
+          <span class="play-surface__poster-pips">
+            <span>♠ ♠</span>
+            <span>♠ ♠</span>
+          </span>
+          <span class="play-surface__poster-corner play-surface__poster-corner--bottom">
+            <strong>4</strong>
+            <span>♠</span>
+          </span>
+        </span>
       </div>
 
       <div class="play-surface__intro">
-        <p class="play-surface__eyebrow">Conveyor Sort</p>
-        <h1>카드 분류 라인</h1>
-        <p class="play-surface__lead">흐르는 벨트에서 맞는 분기 레인을 먼저 눌러라.</p>
+        <p class="play-surface__eyebrow">분류 공장 이야기</p>
+        <h1 class="play-surface__title">
+          작은 카드들이 길을 잃지 않도록, 알맞은 벨트 길을 골라 주세요.
+        </h1>
+        <p class="play-surface__lead">
+          커다란 공장 안에는 똑똑한 분류 게이트가 있어요.
+          카드마다 지나가야 하는 길이 다르기 때문에, 센서가 대답하기 전에 어느 레인으로 갈지 먼저 생각해 보는 거예요.
+        </p>
+
+        <div class="play-surface__story">
+          <p>어떤 날은 숫자를 보고 길을 나누고, 어떤 날은 색과 문양을 함께 살펴봐요.</p>
+          <p>차근차근 규칙을 읽고 알맞은 길을 골라 주면, 카드들은 제자리를 찾아가고 점수도 하나씩 쌓여요.</p>
+        </div>
 
         <div class="play-surface__intro-meta">
           <span>{{ totalLinesLabel }}</span>
-          <span>{{ laneRangeLabel }}</span>
+          <span>쉬운 규칙부터 차근차근</span>
+          <span>AND · OR · NOT · ELIF 익히기</span>
         </div>
 
         <button
@@ -207,7 +207,7 @@ onBeforeUnmount(() => {
           aria-label="분류 시작"
           @click="handleBeginSession"
         >
-          Start Sorting
+          이야기 시작
         </button>
       </div>
     </section>
@@ -239,10 +239,12 @@ onBeforeUnmount(() => {
         class="play-surface__overlay play-surface__overlay--complete"
       >
         <div class="play-surface__intro play-surface__intro--complete">
-          <p class="play-surface__eyebrow">All Lines Clear</p>
-          <h2>모든 라인 통과</h2>
+          <p class="play-surface__eyebrow">오늘의 분류 완료</p>
+          <h2 class="play-surface__title play-surface__title--complete">
+            모든 카드가 제자리를 찾았어요
+          </h2>
           <p class="play-surface__lead">
-            {{ score }}점으로 {{ conveyorMissions.length }}개 라인을 끝냈다.
+            {{ score }}점을 모으면서 {{ conveyorMissions.length }}개의 문제를 끝까지 해결했어요.
           </p>
 
           <button
@@ -251,7 +253,7 @@ onBeforeUnmount(() => {
             aria-label="다시 시작"
             @click="handleResetSession"
           >
-            Restart
+            다시 시작
           </button>
         </div>
       </section>
