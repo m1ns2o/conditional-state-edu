@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { conveyorMissions } from '../data/modules';
-import { useLearningStore } from '../stores/learning';
+import { HINT_PENALTY, useLearningStore } from '../stores/learning';
 import { evaluateConveyorPath } from '../utils/conditions';
 
 describe('learning store', () => {
@@ -43,5 +43,20 @@ describe('learning store', () => {
     store.resetMission(firstMission.id);
     expect(store.missionProgress[firstMission.id].total).toBe(0);
     expect(store.missionProgress[firstMission.id].completed).toBe(false);
+  });
+
+  it('deducts score only on the first hint reveal for a gate', () => {
+    const store = useLearningStore();
+    const gateId = conveyorMissions[0].gates[0].id;
+
+    expect(store.revealHint(gateId)).toBe(true);
+    expect(store.score).toBe(-HINT_PENALTY);
+    expect(store.revealedHints[gateId]).toBe(true);
+
+    expect(store.revealHint(gateId)).toBe(false);
+    expect(store.score).toBe(-HINT_PENALTY);
+
+    store.resetMission(conveyorMissions[0].id);
+    expect(store.revealedHints[gateId]).toBeUndefined();
   });
 });

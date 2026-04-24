@@ -10,6 +10,8 @@ import { evaluateConveyorPath } from '../utils/conditions';
 
 type MissionProgressMap = Record<string, MissionProgress>;
 
+export const HINT_PENALTY = 2;
+
 function createMissionProgressMap(): MissionProgressMap {
   return Object.fromEntries(
     conveyorMissions.map((mission) => [
@@ -23,12 +25,19 @@ function createMissionProgressMap(): MissionProgressMap {
   );
 }
 
+function getGateIdsForMission(missionId: string) {
+  return (
+    conveyorMissions.find((mission) => mission.id === missionId)?.gates.map((gate) => gate.id) ?? []
+  );
+}
+
 export const useLearningStore = defineStore('learning', () => {
   const selectedMissionId = ref(conveyorMissions[0]?.id ?? '');
   const currentPrediction = ref<string | null>(null);
   const runState = ref<ConveyorRunState>('idle');
   const score = ref(0);
   const streak = ref(0);
+  const revealedHints = ref<Record<string, boolean>>({});
   const missionProgress = ref<MissionProgressMap>(createMissionProgressMap());
   const currentRunResult = ref<ConveyorRunResult | null>(null);
   const lastResolvedResult = ref<ConveyorRunResult | null>(null);
@@ -165,6 +174,19 @@ export const useLearningStore = defineStore('learning', () => {
     runState.value = 'resolved';
   }
 
+  function revealHint(gateId: string) {
+    if (revealedHints.value[gateId]) {
+      return false;
+    }
+
+    revealedHints.value = {
+      ...revealedHints.value,
+      [gateId]: true,
+    };
+    score.value -= HINT_PENALTY;
+    return true;
+  }
+
   function resetMission(missionId = selectedMissionId.value) {
     missionProgress.value = {
       ...missionProgress.value,
@@ -174,6 +196,12 @@ export const useLearningStore = defineStore('learning', () => {
         completed: false,
       },
     };
+
+    const nextRevealedHints = { ...revealedHints.value };
+    getGateIdsForMission(missionId).forEach((gateId) => {
+      delete nextRevealedHints[gateId];
+    });
+    revealedHints.value = nextRevealedHints;
 
     if (missionId === selectedMissionId.value) {
       currentPrediction.value = null;
@@ -189,6 +217,7 @@ export const useLearningStore = defineStore('learning', () => {
     runState.value = 'idle';
     score.value = 0;
     streak.value = 0;
+    revealedHints.value = {};
     missionProgress.value = createMissionProgressMap();
     currentRunResult.value = null;
     lastResolvedResult.value = null;
@@ -207,6 +236,8 @@ export const useLearningStore = defineStore('learning', () => {
     missionCompleted,
     missionProgress,
     progressPercent,
+    revealHint,
+    revealedHints,
     resetMission,
     resetSession,
     resolveRun,
